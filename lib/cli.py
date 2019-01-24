@@ -83,6 +83,8 @@ class ScriptExecutor():
     def execute_script(self, arguments):
         """ Run the script for called command """
         log_setup(arguments.loglevel, arguments.logfile, self.command)
+        import tracemalloc
+        tracemalloc.start()
         logger.debug("Executing: %s. PID: %s", self.command, os.getpid())
         try:
             script = self.import_script()

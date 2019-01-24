@@ -14,6 +14,7 @@
 import logging
 import os
 import traceback
+import tracemalloc
 from io import StringIO
 
 import cv2
@@ -21,6 +22,7 @@ import dlib
 from math import sqrt
 
 from lib.gpu_stats import GPUStats
+from lib.memtest import display_top
 from lib.utils import rotate_landmarks
 
 logger = logging.getLogger(__name__)  # pylint: disable=invalid-name
@@ -34,6 +36,7 @@ class Detector():
         self.cachepath = os.path.join(os.path.dirname(__file__), ".cache")
         self.rotation = self.get_rotation_angles(rotation)
         self.parent_is_pool = False
+        self.count = 1
         self.init = None
 
         # The input and output queues for the plugin.
@@ -71,6 +74,7 @@ class Detector():
         """ Inititalize the detector
             Tasks to be run before any detection is performed.
             Override for specific detector """
+        tracemalloc.start()
         logger_init = kwargs["log_init"]
         log_queue = kwargs["log_queue"]
         logger_init(self.loglevel, log_queue)
@@ -121,6 +125,10 @@ class Detector():
                                           if key != "image"})
         else:
             logger.trace("Item out: %s", output)
+        if self.count % 100 == 0:
+            snapshot = tracemalloc.take_snapshot()
+            display_top("_base.py", self.count, snapshot)
+        self.count += 1
         self.queues["out"].put(output)
 
     # <<< DETECTION IMAGE COMPILATION METHODS >>> #

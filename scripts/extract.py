@@ -155,7 +155,6 @@ class Extract():
 
             self.align_face(faces, align_eyes, size, filename)
             self.post_process.do_actions(faces)
-
             faces_count = len(faces["detected_faces"])
             if faces_count == 0:
                 logger.verbose("No faces were detected in image: %s",
@@ -196,6 +195,9 @@ class Extract():
         """ Run detection only """
         self.plugins.launch_detector()
         detected_faces = dict()
+        import tracemalloc
+        from lib.memtest import display_top
+        i = 1
         for detected in tqdm(self.plugins.detect_faces(extract_pass="detect"),
                              total=to_process,
                              file=sys.stdout,
@@ -203,6 +205,11 @@ class Extract():
             exception = detected.get("exception", False)
             if exception:
                 break
+
+            if i % 100 == 0:
+                snapshot = tracemalloc.take_snapshot()
+                display_top("extract.py", i, snapshot)
+            i += 1
 
             del detected["image"]
             filename = detected["filename"]
